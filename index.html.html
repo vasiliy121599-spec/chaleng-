@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>75 Дней Челлендж</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Trebuchet MS', sans-serif;
+      transition: background 0.5s, color 0.5s;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .switch {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    body.day {
+      color: #222;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    body.night {
+      background: #000;
+      color: #eee;
+    }
+
+    canvas#stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .recipes {
+      width: 100%;
+      padding: 10px;
+    }
+
+    .recipes img {
+      max-width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .content {
+      width: 100%;
+      padding: 20px;
+    }
+
+    .participants {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .participant {
+      flex: 1;
+      min-width: 250px;
+      margin: 10px;
+      padding: 15px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .participant h3 {
+      text-align: center;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 8px 0;
+      padding: 8px;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    li:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    li.done {
+      text-decoration: line-through;
+      color: lime;
+    }
+
+    .quote {
+      margin-top: 10px;
+      font-style: italic;
+      text-align: center;
+      color: #aaa;
+    }
+
+    input[type="text"] {
+      width: calc(100% - 90px);
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+      background: #1a1a2e;
+      color: #fff;
+      font-family: "Georgia", serif;
+      font-size: 14px;
+      box-shadow: 0 0 10px #6a5acd, inset 0 0 5px #483d8b;
+    }
+
+    button {
+      margin-left: 5px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #6a5acd;
+      color: #fff;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: #5a4acd;
+      transform: scale(1.05);
+    }
+
+    .timer {
+      font-size: 12px;
+      margin-top: 5px;
+      color: orange;
+    }
+
+    .sad {
+      color: red !important;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      .participant {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="night">
+  <canvas id="stars"></canvas>
+  <header>
+    <h1>75 Дней Челлендж</h1>
+    <label class="switch">
+      <input type="checkbox" id="themeToggle">
+      <span>🌞 / 🌌</span>
+    </label>
+  </header>
+
+  <div class="container">
+    <!-- Блок страв -->
+    <div class="recipes">
+      <h2>Здоровое блюдо</h2>
+      <div id="recipeBox"></div>
+    </div>
+
+    <div class="content">
+      <h2>Участники</h2>
+      <div class="participants">
+        <div class="participant" id="vasiliy">
+          <h3>Василий</h3>
+          <input type="text" placeholder="Введите план..." id="input-vasiliy">
+          <button onclick="addPlan('vasiliy')">Добавить</button>
+          <ul id="list-vasiliy"></ul>
+          <div class="quote" id="quote-vasiliy"></div>
+        </div>
+        <div class="participant" id="karina">
+          <h3>Карина</h3>
+          <input type="text" placeholder="Введите план..." id="input-karina">
+          <button onclick="addPlan('karina')">Добавить</button>
+          <ul id="list-karina"></ul>
+          <div class="quote" id="quote-karina"></div>
+        </div>
+        <div class="participant" id="natalya">
+          <h3>Наталья</h3>
+          <input type="text" placeholder="Введите план..." id="input-natalya">
+          <button onclick="addPlan('natalya')">Добавить</button>
+          <ul id="list-natalya"></ul>
+          <div class="quote" id="quote-natalya"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==== Живое звездное небо (улучшенная версия) ====
+    const canvas = document.getElementById("stars");
+    const ctx = canvas.getContext("2d");
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const stars = [];
+    const starCount = Math.min(300, Math.floor(window.innerWidth * window.innerHeight / 1000));
+
+    for (let i = 0; i < starCount; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.8 + 0.2,
+        speed: Math.random() * 0.3 + 0.1,
+        twinkleSpeed: Math.random() * 0.05 + 0.01,
+        targetAlpha: Math.random() * 0.8 + 0.2
+      });
+    }
+
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Рисуем туманность для глубины
+      const gradient = ctx.createRadialGradient(
+        canvas.width/2, canvas.height/2, 0,
+        canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)/2
+      );
+      gradient.addColorStop(0, 'rgba(10, 5, 30, 0)');
+      gradient.addColorStop(1, 'rgba(10, 5, 30, 0.8)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Рисуем звезды
+      stars.forEach(star => {
+        // Анимация мерцания
+        if (Math.abs(star.alpha - star.targetAlpha) < 0.01) {
+          star.targetAlpha = Math.random() * 0.8 + 0.2;
+        }
+        star.alpha += (star.targetAlpha - star.alpha) * star.twinkleSpeed;
+        
+        ctx.globalAlpha = star.alpha;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        
+        // Случайный цвет для некоторых звезд
+        if (Math.random() > 0.9) {
+          const colors = ['#ffffff', '#ffdddd', '#ddddff', '#ffffaa'];
+          ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+        } else {
+          ctx.fillStyle = "white";
+        }
+        
+        ctx.fill();
+        star.y += star.speed;
+        
+        if (star.y > canvas.height) {
+          star.y = 0;
+          star.x = Math.random() * canvas.width;
+        }
+      });
+      
+      // Рисуем несколько падающих звезд
+      if (Math.random() > 0.99) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height/2;
+        const length = Math.random() * 50 + 30;
+        const speed = Math.random() * 5 + 3;
+        
+        ctx.strokeStyle = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.5})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + length, y - length);
+        ctx.stroke();
+      }
+      
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+
+    // ==== Переключатель тем + картинки ====
+    const themeToggle = document.getElementById("themeToggle");
+    const body = document.body;
+    let animeInterval;
+
+    const animeBackgrounds = [
+      "https://images.unsplash.com/photo-1605773527852-c546a8584ea3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+      "https://images.unsplash.com/photo-1605773527852-c546a8584ea3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+      "https://images.unsplash.com/photo-1605773527852-c546a8584ea3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+      "https://images.unsplash.com/photo-1605773527852-c546a8584ea3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
+      "https://images.unsplash.com/photo-1605773527852-c546a8584ea3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+    ];
+
+    function setRandomAnimeBackground() {
+      const img = new Image();
+      const randomBg = animeBackgrounds[Math.floor(Math.random() * animeBackgrounds.length)];
+      
+      img.onload = function() {
+        body.style.backgroundImage = `url(${randomBg})`;
+      };
+      img.onerror = function() {
+        console.log("Ошибка загрузки фона");
+      };
+      img.src = randomBg;
+    }
+
+    themeToggle.addEventListener("change", () => {
+      body.classList.toggle("day");
+      body.classList.toggle("night");
+
+      if (body.classList.contains("day")) {
+        setRandomAnimeBackground();
+        animeInterval = setInterval(setRandomAnimeBackground, 15000);
+      } else {
+        body.style.backgroundImage = "none";
+        clearInterval(animeInterval);
+      }
+    });
+
+    // ==== Цитаты ====
+    const quotes = [
+      "«Становясь сильнее, мы становимся добрее.» – Наруто",
+      "«Даже в самую тёмную ночь взойдет солнце.» – Fairy Tail",
+      "«Твоя боль делает тебя сильнее.» – Токийский Гуль",
+      "«Жизнь не игра, но нужно бороться до конца.» – One Piece",
+      "«Я не убегу, я никогда не сдамся.» – Наруто",
+      "«Мир не идеален, но он есть, и это делает его прекрасным.» – Алхимик",
+      "«Только тот, кто рискует, может изменить мир.» – Code Geass",
+      "«Если сдашься сейчас – игра закончена.» – Slam Dunk",
+      "«Человек становится сильным, когда у него есть то, что он хочет защитить.» – Наруто",
+      "«Я верю, что улыбка спасет мир.» – One Piece",
+      "«Страх – не зло. Он говорит тебе, где твоя слабость.» – Fairy Tail",
+      "«Поражения учат нас большему, чем победы.» – Haikyuu!!",
+      "«В этом мире слабые не выживают.» – Атака титанов",
+      "«Сила приходит в ответ на настоящую нужду.» – Dragon Ball",
+      "«Даже если ты потерпишь поражение тысячу раз – встань снова.» – My Hero Academia",
+      "«Каждый из нас может быть героем.» – My Hero Academia",
+      "«Никогда не знаешь, что ждёт тебя завтра, и именно это делает жизнь интересной.» – One Piece",
+      "«Я не откажусь от своей мечты!» – One Piece",
+      "«Пламя в сердце никогда не погаснет.» – Fairy Tail",
+      "«Смысл силы – в том, чтобы защищать, а не разрушать.» – Bleach"
+    ];
+
+    function randomQuote() {
+      return quotes[Math.floor(Math.random() * quotes.length)];
+    }
+
+    // ==== Рецепты ====
+    const recipes = [
+      {name:"Овсянка с фруктами", img:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"},
+      {name:"Куриная грудка с овощами", img:"https://images.unsplash.com/photo-1604908177522-f98d7b7883a5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"},
+      {name:"Смузи с бананом и шпинатом", img:"https://images.unsplash.com/photo-1572441710534-680c0b92f9b9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"},
+      {name:"Лосось на гриле с лимоном", img:"https://images.unsplash.com/photo-1600891964599-f61ba0e24092?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"}
+    ];
+
+    function showRecipe() {
+      const r = recipes[Math.floor(Math.random() * recipes.length)];
+      const img = new Image();
+      
+      img.onload = function() {
+        document.getElementById("recipeBox").innerHTML = `
+          <h3>${r.name}</h3>
+          <img src="${r.img}" alt="${r.name}" loading="lazy">
+        `;
+      };
+      img.onerror = function() {
+        document.getElementById("recipeBox").innerHTML = `
+          <h3>${r.name}</h3>
+          <p>Изображение не загружено</p>
+        `;
+      };
+      img.src = r.img;
+    }
+    showRecipe();
+
+    // ==== Планы с таймером ====
+    function addPlan(user) {
+      const input = document.getElementById("input-" + user);
+      const list = document.getElementById("list-" + user);
+      if (input.value.trim() === "") return;
+
+      const li = document.createElement("li");
+      li.textContent = input.value;
+
+      const timer = document.createElement("div");
+      timer.className = "timer";
+      li.appendChild(timer);
+
+      const startTime = new Date().getTime();
+      const endTime = startTime + 24 * 60 * 60 * 1000; // 24 часа
+
+      function updateTimer() {
+        const now = new Date().getTime();
+        let timeLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+        
+        const hours = Math.floor(timeLeft / 3600);
+        const minutes = Math.floor((timeLeft % 3600) / 60);
+        
+        if (timeLeft > 0) {
+          timer.textContent = `⏳ ${hours}ч ${minutes}м осталось`;
+          
+          if (timeLeft < 3600) {
+            li.classList.add("sad");
+            timer.textContent = "😢 Почти нет времени!";
+          }
+        } else {
+          clearInterval(interval);
+          timer.textContent = "❌ Время вышло!";
+        }
+      }
+
+      const interval = setInterval(updateTimer, 60000); // Обновляем каждую минуту
+      updateTimer(); // Первоначальное обновление
+
+      li.addEventListener("click", () => {
+        li.classList.toggle("done");
+        if (li.classList.contains("done")) {
+          document.getElementById("quote-" + user).textContent = randomQuote();
+          clearInterval(interval);
+          timer.textContent = "✅ Цель выполнена!";
+        }
+      });
+
+      // Добавляем обработчик для touch-устройств
+      li.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        li.classList.toggle("done");
+        if (li.classList.contains("done")) {
+          document.getElementById("quote-" + user).textContent = randomQuote();
+          clearInterval(interval);
+          timer.textContent = "✅ Цель выполнена!";
+        }
+      });
+
+      list.appendChild(li);
+      input.value = "";
+    }
+
+    // Автоматическое добавление тестовых планов для демонстрации
+    window.onload = function() {
+      if (document.getElementById("list-vasiliy").children.length === 0) {
+        ["Пробежать 5 км", "Выпить 2 литра воды", "Прочитать 30 страниц"].forEach(text => {
+          document.getElementById("input-vasiliy").value = text;
+          addPlan('vasiliy');
+        });
+      }
+    };
+  </script>
+</body>
+</html>
